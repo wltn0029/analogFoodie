@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,15 +22,14 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class FilterViewAdapter extends RecyclerView.Adapter<FilterViewAdapter.ViewHolder> {
     private static final String TAG = "RecyclerViewAdapter";
     private Context mContext;
-
     public interface OnFilterSelected{
-        void onFilterClicked(FilterSelection filterSelection, ImageView imageView);
+        void onFilterClicked(FilterSelection filterSelection);
     }
     private List<FilterSelection> filters;
     private final OnFilterSelected listener;
 
 
-    public FilterViewAdapter(List<FilterSelection> filters, OnFilterSelected listener,Context context) {
+    public FilterViewAdapter(List<FilterSelection> filters, OnFilterSelected listener, Context context) {
         this.filters = filters;
         this.listener = listener;
         mContext = context;
@@ -54,7 +54,6 @@ public class FilterViewAdapter extends RecyclerView.Adapter<FilterViewAdapter.Vi
     @Override
     public void onBindViewHolder(ViewHolder holder, final int position) {
         Log.d(TAG, "onBindViewHolder: called.");
-        final ImageView imageView = holder.image;
         final FilterSelection filterSelection = filters.get(position);
         Bitmap bitmap = BitmapFactory.decodeResource(mContext.getResources(),R.drawable.sample);
         holder.name.setText(filterSelection.name);
@@ -66,7 +65,7 @@ public class FilterViewAdapter extends RecyclerView.Adapter<FilterViewAdapter.Vi
         holder.image.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                listener.onFilterClicked(filterSelection,imageView);
+                listener.onFilterClicked(filterSelection);
                 Log.d(TAG, "onClick: clicked on an image: " + filters.get(position));
                 Toast.makeText(mContext, filters.get(position).name, Toast.LENGTH_SHORT).show();
             }

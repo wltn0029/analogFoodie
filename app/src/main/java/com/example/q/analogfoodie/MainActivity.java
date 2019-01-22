@@ -27,7 +27,6 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -57,7 +56,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -86,6 +84,7 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
     private Bitmap  originalBitmap,filterBitmap;
     private Bitmap backoriginalBitmap,backFilteredBitmap;
     public static List<FilterSelection> effectItems = new LinkedList<>();
+    public static List<FilterSelection> frontItems = new LinkedList<>();
     private FilterSelection lastFilterSelection;
     private FilterSelection backLastFilterSelection;
     public static Bitmap userImageBitmap;
@@ -105,7 +104,7 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
     Rect outRect = new Rect();
     int[] location = new int[2];
     private FrameLayout frameLayout;
-
+    //private int maskInt;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -129,7 +128,7 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
         backBtn = (Button)findViewById(R.id.backBtn);
         facebookBtn = (Button)findViewById(R.id.facebookBtn);
         rvFilters = (RecyclerView)findViewById(R.id.rv_filters);
-
+//        maskInt = R.drawable.jingumask;
         //start filter from recommended filter
         curMaskFilter = 1;
 
@@ -144,8 +143,6 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
                 myBitmap.compress(Bitmap.CompressFormat.JPEG, 90, bao);
                 byte[] ba = bao.toByteArray();
                 final String ba1 = Base64.encodeToString(ba, Base64.DEFAULT);
-
-
 
                 //ba1을 fileString으로 volley 이용해서 post하기
                 String url = "http://143.248.140.251:9780/api/photo/add";
@@ -177,7 +174,6 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
                 };
                 queue.add(postRequest);
             }
-
         } else {
             Uri myURI = getIntent().getData();
             try {
@@ -187,7 +183,6 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
                 userImageBitmap.compress(Bitmap.CompressFormat.JPEG, 90, bao);
                 byte[] ba = bao.toByteArray();
                 final String ba1 = Base64.encodeToString(ba, Base64.DEFAULT);
-
 
                 //ba1을 fileString으로 volley 이용해서 post하기
                 String url = "http://143.248.140.251:9780/api/photo/add";
@@ -317,12 +312,19 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
                 EasyLUT.fromResourceId().withColorAxes(CoordinateToColor.Type.RGB_TO_XYZ).withResources(resources)
                         .withAlignmentMode(LutAlignment.Mode.HALD);
 
+        //for portrait
+        frontAddFilter("none", EasyLUT.createNonFilter());
+        frontAddFilter("sony1",squareRgb.withLutBitmapId(R.drawable.foreground_sony1).createFilter());
+        frontAddFilter("sony2",squareRgb.withLutBitmapId(R.drawable.foreground_sony2).createFilter());
+        frontAddFilter("red",squareRgb.withLutBitmapId(R.drawable.foreground_red).createFilter());
+        frontAddFilter("arri",squareRgb.withLutBitmapId(R.drawable.foreground_arri).createFilter());
 
-        addFilter("none", EasyLUT.createNonFilter());
-        addFilter("sony1",squareRgb.withLutBitmapId(R.drawable.foreground_sony1).createFilter());
-        addFilter("sony2",squareRgb.withLutBitmapId(R.drawable.foreground_sony2).createFilter());
-        addFilter("red",squareRgb.withLutBitmapId(R.drawable.foreground_red).createFilter());
-        addFilter("arri",squareRgb.withLutBitmapId(R.drawable.foreground_arri).createFilter());
+        //for background
+        addFilter("none",EasyLUT.createNonFilter());
+        addFilter("cinebasic",squareRgb.withLutBitmapId(R.drawable.back_cinebasic).createFilter());
+        addFilter("cinetealorange",squareRgb.withLutBitmapId(R.drawable.back_cinetealorange).createFilter());
+        addFilter("cold",squareRgb.withLutBitmapId(R.drawable.back_cold).createFilter());
+        addFilter("drama",squareRgb.withLutBitmapId(R.drawable.back_drama).createFilter());
 
         background.post(new Runnable() {
             @Override
@@ -408,7 +410,10 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
     private void addFilter(String name, Filter filter) {
         effectItems.add(new FilterSelection(name.toUpperCase(Locale.ENGLISH), filter));
     }
-
+    private void frontAddFilter(String name, Filter filter){
+        frontItems.add(new FilterSelection(name.toUpperCase(Locale.ENGLISH), filter));
+    }
+    
     private void setBusy(boolean busy, boolean removeImage) {
         if (busy) {
             pbBusy.animate().alpha(1f).start();
@@ -521,18 +526,17 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
                     foreground.setImageBitmap(filterBitmap);
                     setBusy(false, true);
                     foreground.setOnTouchListener(new OnSwipeTouchListener(MainActivity.this){
-
                         public void onSwipeRight(){
                             dir = "right";
-                            curMaskFilter = (curMaskFilter+1)%effectItems.size();
-                            lastFilterSelection = effectItems.get(curMaskFilter);
-                            onFilterClicked(lastFilterSelection,foreground);
+                            curMaskFilter = (curMaskFilter+1)%5;
+                            lastFilterSelection = frontItems.get(curMaskFilter);
+                            FilterChanged(lastFilterSelection);
                         }
                         public void onSwipeLeft(){
                             dir = "left";
-                            curMaskFilter = (curMaskFilter-1+effectItems.size())%effectItems.size();
-                            lastFilterSelection = effectItems.get(curMaskFilter);
-                            onFilterClicked(lastFilterSelection,foreground);
+                            curMaskFilter = (curMaskFilter-1+5)%5;
+                            lastFilterSelection = frontItems.get(curMaskFilter);
+                            FilterChanged(lastFilterSelection);
                         }
                     });
 //                onFilterClicked(lastFilterSelection);
@@ -547,7 +551,7 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
                     backFilteredBitmap = bitmap[1];
                     background.setImageBitmap(backFilteredBitmap);
                     setBusy(false,true);
-                    onFilterClicked(backLastFilterSelection,background);
+                    onFilterClicked(backLastFilterSelection);
                     if (backFilteredBitmap == null) {
                         Log.d(TAG, String.format("loading bitmap failed in %.2fms", (System.nanoTime() - start) / 1e6f));
                     } else {
@@ -558,8 +562,61 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
         }.execute(bitmap);
     }
 
+    public void FilterChanged(FilterSelection filterSelection){
+        lastFilterSelection = filterSelection;
+        new AsyncTask<Void,Void,Bitmap>(){
+            long start;
+            @Override
+            protected void onPreExecute() {
+                setBusy(true, false);
+                start = System.nanoTime();
+            }
+            @Override
+            protected Bitmap doInBackground(Void... voids) {
+                 Log.d("***check","background job for filterclicked");
+
+//                Bitmap bitmap2 = resultMaskBitmap;
+//                publishProgress(bitmap1);
+                if (lastFilterSelection == null || filterBitmap == null) {
+                    return filterBitmap;
+                }
+                Log.i("***TEST", filterBitmap.toString());
+                Log.i("***TEST", lastFilterSelection.filter.toString());
+                try {
+                    return lastFilterSelection.filter.apply(filterBitmap);
+                } catch (Exception e){
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+            @Override
+            protected void onPostExecute(Bitmap bitmap){
+                Bitmap mask = BitmapFactory.decodeResource(getResources(),R.drawable.mask);
+                int intWidth = bitmap.getWidth();
+                int intHeight = bitmap.getHeight();
+                Bitmap resultMaskBitmap = Bitmap.createBitmap(intWidth,intHeight,Bitmap.Config.ARGB_8888);
+                Bitmap getMaskBitmap = Bitmap.createScaledBitmap(mask,intWidth,intHeight,true);
+                Canvas mCanvas = new Canvas(resultMaskBitmap);
+                Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
+                mCanvas.drawBitmap(bitmap, 0, 0, null);
+                mCanvas.drawBitmap(getMaskBitmap, 0, 0, paint);
+                paint.setXfermode(null);
+                bitmap=  resultMaskBitmap;
+                foreground.setImageBitmap(bitmap);
+                setBusy(false, false);
+                if (bitmap == null) {
+                    Log.d(TAG, String.format("processing bitmap failed in %.2fms", (System.nanoTime() - start) / 1e6f));
+                } else {
+                    Log.d(TAG, String.format("processed %dx%d bitmap in %.2fms", bitmap.getWidth(), bitmap.getHeight(), (System.nanoTime() - start) / 1e6f));
+                }
+            }
+           
+        }.execute();
+    }
+
     @Override
-    public void onFilterClicked(FilterSelection filterSelection,final ImageView imageView) {
+    public void onFilterClicked(FilterSelection filterSelection) {
         final FilterSelection filter = filterSelection;
         final FilterSelection Backfilter= filterSelection;
         new AsyncTask<Void, Void, Bitmap>() {
@@ -573,58 +630,23 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
 
             @Override
             protected Bitmap doInBackground(Void... voids) {
-                if(imageView == foreground){
-                    lastFilterSelection = filter;
-                    Log.d("***check","background job for filterclicked");
+                backLastFilterSelection = Backfilter;
+                Log.d("***check","background is changed");
+                if(backLastFilterSelection == null || originalBitmap == null){
+                    return backFilteredBitmap;
+                }
+                try{
+                    return backLastFilterSelection.filter.apply(backFilteredBitmap);
+                }catch(Exception e){
+                    e.printStackTrace();
+                    return null;
+                }
 
-//                Bitmap bitmap2 = resultMaskBitmap;
-//                publishProgress(bitmap1);
-                    if (lastFilterSelection == null || filterBitmap == null) {
-                        return filterBitmap;
-                    }
-                    Log.i("***TEST", filterBitmap.toString());
-                    Log.i("***TEST", lastFilterSelection.filter.toString());
-                    try {
-                        return lastFilterSelection.filter.apply(filterBitmap);
-                    } catch (Exception e){
-                        e.printStackTrace();
-                        return null;
-                    }
-                }
-                else{
-                    backLastFilterSelection = Backfilter;
-                    Log.d("***check","background is changed");
-                    if(backLastFilterSelection == null || originalBitmap == null){
-                        return backFilteredBitmap;
-                    }
-                    try{
-                        return backLastFilterSelection.filter.apply(backFilteredBitmap);
-                    }catch(Exception e){
-                        e.printStackTrace();
-                        return null;
-                    }
-                }
             }
 
             @Override
             protected void onPostExecute(Bitmap bitmap) {
-
-                if(imageView == foreground) {
-                    Bitmap mask = BitmapFactory.decodeResource(getResources(),R.drawable.mask);
-                    int intWidth = bitmap.getWidth();
-                    int intHeight = bitmap.getHeight();
-                    Bitmap resultMaskBitmap = Bitmap.createBitmap(intWidth,intHeight,Bitmap.Config.ARGB_8888);
-                    Bitmap getMaskBitmap = Bitmap.createScaledBitmap(mask,intWidth,intHeight,true);
-                    Canvas mCanvas = new Canvas(resultMaskBitmap);
-                    Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                    paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
-                    mCanvas.drawBitmap(bitmap, 0, 0, null);
-                    mCanvas.drawBitmap(getMaskBitmap, 0, 0, paint);
-                    paint.setXfermode(null);
-                    bitmap=  resultMaskBitmap;
-                   foreground.setImageBitmap(bitmap);
-                }
-                else background.setImageBitmap(bitmap);
+                background.setImageBitmap(bitmap);
                 setBusy(false, false);
                 if (bitmap == null) {
                     Log.d(TAG, String.format("processing bitmap failed in %.2fms", (System.nanoTime() - start) / 1e6f));
@@ -633,17 +655,5 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
                 }
             }
         }.execute();
-    }
-
-    public void Merge(View view,Bitmap backBitmap,Bitmap maskedBitmap) {
-        Bitmap mergedImages = createSingleImageFromMultipleImages(backBitmap,maskedBitmap);
-    }
-
-    private Bitmap createSingleImageFromMultipleImages(Bitmap firstImage, Bitmap secondImage){
-        Bitmap result = Bitmap.createBitmap(firstImage.getWidth(), firstImage.getHeight(), firstImage.getConfig());
-        Canvas canvas = new Canvas(result);
-        canvas.drawBitmap(firstImage, 0f, 0f, null);
-        canvas.drawBitmap(secondImage, 10, 10, null);
-        return result;
     }
 }
