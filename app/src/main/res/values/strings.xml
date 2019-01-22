@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">AnalogFoodie</string>
+    <string name="facebook_app_id">472172753312246</string>
+    <string name="facebook_login_protocol_scheme">fb472172753312246</string>
+</resources>
