@@ -35,7 +35,12 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.android.volley.Request;
 import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
@@ -55,9 +60,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 
 import hu.don.easylut.EasyLUT;
@@ -103,13 +110,12 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
-
         //facebook sdk
         FacebookSdk.sdkInitialize(this.getApplicationContext());
         FacebookSdk.setApplicationId(getResources().getString(R.string.facebook_app_id));
         callbackManager=CallbackManager.Factory.create();
         shareDialog = new ShareDialog(this);
-
+        queue = Volley.newRequestQueue(this);
         setContentView(R.layout.activity_main);
 
         resources = getResources();
@@ -132,6 +138,44 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
             if(myFile.exists()){
                 Bitmap myBitmap = BitmapFactory.decodeFile(myFile.getAbsolutePath());
                userImageBitmap = myBitmap;
+
+                //이 사진을 디코딩해서 db에 넣어줘야대
+                ByteArrayOutputStream bao = new ByteArrayOutputStream();
+                myBitmap.compress(Bitmap.CompressFormat.JPEG, 90, bao);
+                byte[] ba = bao.toByteArray();
+                final String ba1 = Base64.encodeToString(ba, Base64.DEFAULT);
+
+
+
+                //ba1을 fileString으로 volley 이용해서 post하기
+                String url = "http://143.248.140.251:9780/api/photo/add";
+                final StringRequest postRequest = new StringRequest(Request.Method.POST, url,
+                        new Response.Listener<String>()
+                        {
+                            @Override
+                            public void onResponse(String response) {
+                                // response
+                                Log.d("Response", response);
+                            }
+                        },
+                        new Response.ErrorListener()
+                        {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                // error
+                            }
+                        }
+                ) {
+                    @Override
+                    protected Map<String, String> getParams()
+                    {
+                        Map<String, String>  params = new HashMap<String, String>();
+                        params.put("fileString", ba1);
+
+                        return params;
+                    }
+                };
+                queue.add(postRequest);
             }
 
         } else {
@@ -139,6 +183,45 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
             try {
                 Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), myURI);
                 userImageBitmap = bitmap;
+                ByteArrayOutputStream bao = new ByteArrayOutputStream();
+                userImageBitmap.compress(Bitmap.CompressFormat.JPEG, 90, bao);
+                byte[] ba = bao.toByteArray();
+                final String ba1 = Base64.encodeToString(ba, Base64.DEFAULT);
+
+
+                //ba1을 fileString으로 volley 이용해서 post하기
+                String url = "http://143.248.140.251:9780/api/photo/add";
+                final StringRequest postRequest = new StringRequest(Request.Method.POST, url,
+                        new Response.Listener<String>()
+                        {
+                            @Override
+                            public void onResponse(String response) {
+                                // response
+                                Log.d("Response", response);
+                            }
+                        },
+                        new Response.ErrorListener()
+                        {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                // error
+                            }
+                        }
+                ) {
+                    @Override
+                    protected Map<String, String> getParams()
+                    {
+                        Map<String, String>  params = new HashMap<String, String>();
+                        params.put("fileString", ba1);
+
+                        Log.e("ba1", ba1);
+
+                        return params;
+                    }
+                };
+                queue.add(postRequest);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -236,31 +319,10 @@ public class MainActivity extends AppCompatActivity implements FilterViewAdapter
 
 
         addFilter("none", EasyLUT.createNonFilter());
-        addFilter("identity_square_8", squareRgb.withLutBitmapId(R.drawable.identity_square_8).createFilter());
-        addFilter("identity_hald_8", haldRgb.withLutBitmapId(R.drawable.identity_hald_8).createFilter());
-        addFilter("square_4_brg", squareBrg.withLutBitmapId(R.drawable.filter_square_4_brg).createFilter());
-        addFilter("square_8_00", squareRgb.withLutBitmapId(R.drawable.filter_square_8_00).createFilter());
-        addFilter("square_8_01", squareRgb.withLutBitmapId(R.drawable.filter_square_8_01).createFilter());
-        addFilter("square_8_02", squareRgb.withLutBitmapId(R.drawable.filter_square_8_02).createFilter());
-        addFilter("square_8_03", squareRgb.withLutBitmapId(R.drawable.filter_square_8_03).createFilter());
-        addFilter("square_8_04", squareRgb.withLutBitmapId(R.drawable.filter_square_8_04).createFilter());
-        addFilter("square_8_05", squareRgb.withLutBitmapId(R.drawable.filter_square_8_05).createFilter());
-        addFilter("square_8_06", squareRgb.withLutBitmapId(R.drawable.filter_square_8_06).createFilter());
-        addFilter("square_8_07", squareRgb.withLutBitmapId(R.drawable.filter_square_8_07).createFilter());
-        addFilter("square_8_08", squareRgb.withLutBitmapId(R.drawable.filter_square_8_08).createFilter());
-        addFilter("square_8_09", squareRgb.withLutBitmapId(R.drawable.filter_square_8_09).createFilter());
-        addFilter("square_8_09", squareRgb.withLutBitmapId(R.drawable.filter_square_8_09).createFilter());
-        addFilter("wide_4_00", squareRgb.withLutBitmapId(R.drawable.filter_wide_4_00).createFilter());
-        addFilter("wide_4_01", squareRgb.withLutBitmapId(R.drawable.filter_wide_4_01).createFilter());
-        addFilter("wide_4_02", squareRgb.withLutBitmapId(R.drawable.filter_wide_4_02).createFilter());
-        addFilter("wide_4_03", squareRgb.withLutBitmapId(R.drawable.filter_wide_4_03).createFilter());
-        addFilter("wide_4_04", squareRgb.withLutBitmapId(R.drawable.filter_wide_4_04).createFilter());
-        addFilter("wide_4_05", squareRgb.withLutBitmapId(R.drawable.filter_wide_4_05).createFilter());
-        addFilter("wide_4_06", squareRgb.withLutBitmapId(R.drawable.filter_wide_4_06).createFilter());
-        addFilter("wide_4_07", squareRgb.withLutBitmapId(R.drawable.filter_wide_4_07).createFilter());
-        addFilter("wide_8_bgr", squareBgr.withLutBitmapId(R.drawable.filter_wide_8_bgr).createFilter());
-        addFilter("hald_8_00", haldRgb.withLutBitmapId(R.drawable.filter_hald_8_00).createFilter());
-        addFilter("hald_8_01", haldRgb.withLutBitmapId(R.drawable.filter_hald_8_01).createFilter());
+        addFilter("sony1",squareRgb.withLutBitmapId(R.drawable.foreground_sony1).createFilter());
+        addFilter("sony2",squareRgb.withLutBitmapId(R.drawable.foreground_sony2).createFilter());
+        addFilter("red",squareRgb.withLutBitmapId(R.drawable.foreground_red).createFilter());
+        addFilter("arri",squareRgb.withLutBitmapId(R.drawable.foreground_arri).createFilter());
 
         background.post(new Runnable() {
             @Override

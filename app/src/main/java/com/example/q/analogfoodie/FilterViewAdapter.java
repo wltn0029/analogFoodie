@@ -38,7 +38,6 @@ public class FilterViewAdapter extends RecyclerView.Adapter<FilterViewAdapter.Vi
     public class ViewHolder extends RecyclerView.ViewHolder{
         CircleImageView image;
         TextView name;
-
         public ViewHolder(View itemView) {
             super(itemView);
             image = itemView.findViewById(R.id.image_view);
